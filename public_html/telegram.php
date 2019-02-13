@@ -15,10 +15,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 			'127.0.1.1',
 		]);
 
-		if (Environment::getLastPath(__DIR__ . '/../') === 'profile.pay') {
-			Environment::setEnvironment(Environment::ENVIRONMENT_DEVELOPMENT);
-		} else {
+		if (Environment::getLastPath(__DIR__ . '/../') === 'coffee.loc') {
 			Environment::setEnvironment(Environment::ENVIRONMENT_LOCAL);
+		} else {
+			Environment::setEnvironment(Environment::ENVIRONMENT_DEVELOPMENT);
 		}
 
 		return array_replace_recursive(require __DIR__ . '/../config/bot.php', require __DIR__ . "/../config/bot_local.php" . '');
