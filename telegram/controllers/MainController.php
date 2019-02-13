@@ -10,7 +10,7 @@ class MainController extends BaseController {
 	public function actionMain() {
 		//return [];
 		//$response = Telegram::$app->bot->response->install();
-		$message = Telegram::$app->bot->request->getRawData();
+		$message = Telegram::$app->bot->request->getMessage();
 
 		return $message;
 	}

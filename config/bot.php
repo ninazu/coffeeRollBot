@@ -1,7 +1,6 @@
 <?php
 
 use vendor\ninazu\framework\Component\Response\Response;
-use vendor\ninazu\framework\Component\Response\Serializer\EmailSerializer;
 use vendor\ninazu\framework\Component\Response\Serializer\FileSerializer;
 
 return [
