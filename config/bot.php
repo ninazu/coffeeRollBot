@@ -2,6 +2,7 @@
 
 use vendor\ninazu\framework\Component\Response\Response;
 use vendor\ninazu\framework\Component\Response\Serializer\EmailSerializer;
+use vendor\ninazu\framework\Component\Response\Serializer\FileSerializer;
 
 return [
 	'basePath' => __DIR__ . '/../',
@@ -14,12 +15,12 @@ return [
 		],
 		'mail' => [
 			'config' => [
-				'transport' => [
-					'username' => null,
-					'password' => null,
-					'port' => null,
-					'host' => null,
-				],
+//				'transport' => [
+//					'username' => null,
+//					'password' => null,
+//					'port' => null,
+//					'host' => null,
+//				],
 			],
 		],
 		'router' => [
@@ -37,7 +38,10 @@ return [
 				'contentType' => Response::CONTENT_JSON,
 				'serializers' => [
 					Response::CONTENT_JSON => [
-						'class' => EmailSerializer::class,
+						'class' => FileSerializer::class,
+						'config' => [
+							'filename' => __DIR__ . '/../tmp/response.log',
+						],
 					],
 				],
 			],
