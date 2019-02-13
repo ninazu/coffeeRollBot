@@ -1,0 +1,3 @@
+[submodule "vendor/ninazu/framework"]
+	path = vendor/ninazu/framework
+	url = git@github.com:ninazu/framework.git
