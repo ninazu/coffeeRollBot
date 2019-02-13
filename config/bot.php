@@ -22,19 +22,6 @@ return [
 				],
 			],
 		],
-		'db' => [
-			'config' => [
-				'databases' => [
-					'default' => [
-						'port' => '3306',
-						'charset' => 'utf8',
-						'hostname' => null,
-						'username' => null,
-						'password' => null,
-					],
-				],
-			],
-		],
 		'router' => [
 			'config' => [
 				'namespace' => 'telegram\\',

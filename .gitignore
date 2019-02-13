@@ -2,3 +2,4 @@
 composer.phar
 vendor/*
 !vendor/ninazu/
+config/*_local.php
