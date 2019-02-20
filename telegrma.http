@@ -1,5 +1,7 @@
+#####
 POST http://73.coffee.loc/telegram/c9f0fa9e9609a659b385e06f33003a79
 
-{
+{"update_id":643663215,
+"message":{"message_id":23,"from":{"id":212856439,"is_bot":false,"first_name":"Co.","last_name":"In","username":"co_in","language_code":"en"},"chat":{"id":-1001319323451,"title":"TestBot","type":"supergroup"},"date":1550677635,"text":"11"}}
 
-}
+###
