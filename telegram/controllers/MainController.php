@@ -39,7 +39,7 @@ class MainController extends BaseController {
 		$users = $users = self::getStats($message);
 		$exclude = '@user1';
 		$choseOne = '@user2';
-		$this->bot->response->sendMessage($message->chat->id, "Час кави! {$choseOne} ти обраний.\n{$exclude} готовував минулого разу, і виключається із черги");
+		$this->bot->response->sendMessage($message->chat->id, "Час кави!\n{$choseOne} ти обраний.\n{$exclude} готовував минулого разу, і виключається із черги");
 		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOne);
 	}
 
