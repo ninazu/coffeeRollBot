@@ -17,12 +17,14 @@ class MainController extends BaseController {
 
 		switch (true) {
 			case $message instanceof Message:
+				if ($entities = $message->getEntities()) {
+					if (preg_match("/\/(\w+)@{$this->bot->getBotName()}/", $entities[0], $matches)) {
+						$response = $this->bot->response->sendMessage($message->chat->id, print_r($matches, true));
+					}
+				}
 
-				//case $message instanceof Comman
 				break;
 		}
-
-		$response = $this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 
 		return $response;
 	}
