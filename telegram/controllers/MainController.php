@@ -18,10 +18,11 @@ class MainController extends BaseController {
 		switch (true) {
 			case $message instanceof Message:
 
-				$response = $this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
-
+				//case $message instanceof Comman
 				break;
 		}
+
+		$response = $this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 
 		return $response;
 	}
