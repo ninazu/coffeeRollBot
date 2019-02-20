@@ -44,7 +44,7 @@ class MainController extends BaseController {
 	}
 
 	private function actionInclude(Message $message) {
-		$message->reply->from['id'];
+		$message->reply->from->id;
 		$this->bot->response->sendMessage($message->chat->id, "Доданий до списку {$message->reply->from->firstName}");
 		$users = self::getStats($message);
 	}
