@@ -35,7 +35,7 @@ class MainController extends BaseController {
 		return __DIR__ . "/../../tmp/{$chatId}.{$ext}";
 	}
 
-	private function actionRoll(Message $message) {
+	protected function actionRoll(Message $message) {
 		$users = $users = self::getStats($message);
 		$exclude = '@user1';
 		$choseOne = '@user2';
@@ -43,18 +43,40 @@ class MainController extends BaseController {
 		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOne);
 	}
 
-	private function actionInclude(Message $message) {
+	protected function actionInclude(Message $message) {
+		$users = self::getStats($message);
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->firstName}</b> доданий до списку");
+
+		$users[$message->reply->from->id] = [
+			'status' => true,
+			'count' => isset($users[$message->reply->from->id]) ? $users[$message->reply->from->id] : 0,
+		];
+
+		self::saveStats($message, $users);
+	}
+
+	protected function actionExclude(Message $message) {
+		$users = self::getStats($message);
 		$message->reply->from->id;
-		$this->bot->response->sendMessage($message->chat->id, "Доданий до списку {$message->reply->from->firstName}");
-		$users = self::getStats($message);
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->firstName}</b> виключений із списку");
+
+		$users[$message->reply->from->id]['status'] = false;
+
+		self::saveStats($message, $users);
 	}
 
-	private function actionExclude(Message $message) {
+	protected function actionDelete(Message $message) {
 		$users = self::getStats($message);
+		$message->reply->from->id;
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->firstName}</b> видаленний із списку");
+
+		unset($users[$message->reply->from->id]);
+
+		self::saveStats($message, $users);
 	}
 
-	private function actionDelete(Message $message) {
-		$users = self::getStats($message);
+	private static function saveStats(Message $message, $users) {
+		file_put_contents(self::getTemp($message->chat->id, "stats"), json_encode($users));
 	}
 
 	private static function getStats(Message $message) {
@@ -72,11 +94,11 @@ class MainController extends BaseController {
 		return json_decode($data, true);
 	}
 
-	private function actionNews(Message $message) {
+	protected function actionNews(Message $message) {
 
 	}
 
-	private function actionStats(Message $message) {
+	protected function actionStats(Message $message) {
 
 	}
 

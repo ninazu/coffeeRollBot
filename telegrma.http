@@ -17,4 +17,10 @@ POST http://73.coffee.loc/telegram/c9f0fa9e9609a659b385e06f33003a79
 {"update_id":643663268,
 "message":{"message_id":140,"from":{"id":212856439,"is_bot":false,"first_name":"Co.","last_name":"In","username":"co_in","language_code":"en"},"chat":{"id":-1001319323451,"title":"TestBot","type":"supergroup"},"date":1550687901,"reply_to_message":{"message_id":137,"from":{"id":212856439,"is_bot":false,"first_name":"Co.","last_name":"In","username":"co_in","language_code":"en"},"chat":{"id":-1001319323451,"title":"TestBot","type":"supergroup"},"date":1550687886,"text":"/roll@coffeeRollBot","entities":[{"offset":0,"length":19,"type":"bot_command"}]},"text":"/include@coffeeRollBot","entities":[{"offset":0,"length":22,"type":"bot_command"}]}}
 
+### REPLY Normal
+POST http://73.coffee.loc/telegram/c9f0fa9e9609a659b385e06f33003a79
+
+{"update_id":643663275,
+"message":{"message_id":154,"from":{"id":212856439,"is_bot":false,"first_name":"Co.","last_name":"In","username":"co_in","language_code":"en"},"chat":{"id":-1001319323451,"title":"TestBot","type":"supergroup"},"date":1550751916,"reply_to_message":{"message_id":134,"from":{"id":212856439,"is_bot":false,"first_name":"Co.","last_name":"In","username":"co_in","language_code":"en"},"chat":{"id":-1001319323451,"title":"TestBot","type":"supergroup"},"date":1550687847,"text":"teasd"},"text":"/include@coffeeRollBot","entities":[{"offset":0,"length":22,"type":"bot_command"}]}}
+
 ###
