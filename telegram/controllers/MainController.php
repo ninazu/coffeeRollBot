@@ -26,8 +26,7 @@ class MainController extends BaseController {
 
 				break;
 		}
-
-		$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
+		//$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 	}
 
 	private static function getTemp(int $chatId, string $ext) {
@@ -114,6 +113,7 @@ class MainController extends BaseController {
 			'count' => isset($users[$message->reply->from->id]) ? $users[$message->reply->from->id] : 0,
 			'last' => null,
 			'name' => $message->reply->from->getSafeName(),
+			'deleted' => false,
 		];
 		self::saveStats($message, $users);
 		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->getSafeName()}</b> доданий до черги");
@@ -152,7 +152,7 @@ class MainController extends BaseController {
 		$users[$userId]['count']++;
 		$users[$userId]['last'] = time();
 		self::saveStats($message, $users);
-		$this->actionStats($message);
+		self::actionStats($message);
 	}
 
 	protected function actionNews(Message $message) {
