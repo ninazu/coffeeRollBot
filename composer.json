@@ -6,7 +6,8 @@
 	"ext-json": "*",
 	"ext-curl": "*",
 	"ext-pdo": "*",
-	"ninazu/framework": "*"
+	"ninazu/framework": "*",
+	"ext-simplexml": "*"
   },
   "repositories": [
 	{

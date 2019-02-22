@@ -58,7 +58,7 @@ class MainController extends BaseController {
 		return json_decode($data, true);
 	}
 
-	private static function getActiveList(array $users) {
+	private static function getList(array $users, bool $onlyActive) {
 		$headers = [
 			" Ім'я",
 			"Кількість",
@@ -78,7 +78,7 @@ class MainController extends BaseController {
 		$columnsNamesCount = count($columnsNames);
 
 		foreach ($users as $userId => $row) {
-			if ($row['deleted']) {
+			if (!empty($row['deleted']) || ($onlyActive && empty($row['status']))) {
 				continue;
 			}
 
@@ -158,7 +158,7 @@ class MainController extends BaseController {
 
 	protected function actionRoll(Message $message) {
 		$users = self::getStats($message);
-		$list = self::getActiveList($users);
+		$list = self::getList($users, true);
 		$excludeId = null;
 
 		if (file_exists(self::getTemp($message->chat->id, "last"))) {
@@ -178,14 +178,14 @@ class MainController extends BaseController {
 		$response = "Час кави!\n<b>{$choseOne}</b> ти обраний.";
 
 		if ($excludeId && isset($users[$excludeId])) {
-			$response .= "\n{$users[$excludeId]} готовував минулого разу, і виключається із черги";
+			$response .= "\n<b>{$users[$excludeId]['name']}</b> готовував минулого разу, і виключається із черги";
 		}
 
 		$response .= "\n";
 
 		$this->bot->response->sendMessage($message->chat->id, $response);
 
-		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOneId);
+		file_put_contents(self::getTemp($message->chat->id, "pending"), $choseOneId);
 
 		return null;
 	}
@@ -266,18 +266,18 @@ class MainController extends BaseController {
 	}
 
 	protected function actionStats(Message $message) {
-		$rows = self::getActiveList(self::getStats($message));
+		$rows = self::getList(self::getStats($message), false);
 		$table = "<code>" . implode("\n", $rows) . "</code>";
 
 		$this->bot->response->sendMessage($message->chat->id, $table);
 	}
 
 	protected function actionOk(Message $message) {
-		if (!file_exists(self::getTemp($message->chat->id, "last"))) {
+		if (!file_exists(self::getTemp($message->chat->id, "pending"))) {
 			return $this->bot->response->sendMessage($message->chat->id, 'Перед збереженням треба вибрати "переможця"');
 		}
 
-		$userId = file_get_contents(self::getTemp($message->chat->id, "last"));
+		$userId = file_get_contents(self::getTemp($message->chat->id, "pending"));
 		$users = self::getStats($message);
 
 		if (!isset($users[$userId])) {
@@ -287,12 +287,36 @@ class MainController extends BaseController {
 		$users[$userId]['count']++;
 		$users[$userId]['last'] = time();
 		self::saveStats($message, $users);
-		unlink(self::getTemp($message->chat->id, "last"));
+		unlink(self::getTemp($message->chat->id, "pending"));
+
+		file_put_contents(self::getTemp($message->chat->id, "last"), $userId);
 
 		return self::actionStats($message);
 	}
 
 	protected function actionNews(Message $message) {
-		$this->bot->response->sendMessage($message->chat->id, "В стадії розробки");
+		$feed = "https://24tv.ua/rss/all.xml";
+		$feed = "https://nv.ua/rss/all.xml";
+		$feed = "https://tsn.ua/rss/full.rss";
+
+		$ch = curl_init($feed);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$content = curl_exec($ch);
+
+		$x = simplexml_load_string($content);
+		$a = [];
+
+		foreach ($x->channel->item as $item) {
+			$a[] = (string)$item->title;
+		}
+
+		shuffle($a);
+		$a = array_slice($a, 0, 10);
+
+		foreach ($a as $index => $row) {
+			$a[$index] = trim($row);
+		}
+
+		$this->bot->response->sendMessage($message->chat->id, implode("\n\n", $a));
 	}
 }
