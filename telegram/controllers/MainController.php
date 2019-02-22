@@ -32,7 +32,7 @@ class MainController extends BaseController {
 
 				break;
 		}
-		$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
+		//$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 	}
 
 	private static function getTemp(int $chatId, string $ext) {
@@ -120,6 +120,42 @@ class MainController extends BaseController {
 		return $list;
 	}
 
+	/**
+	 * @param Message $message
+	 *
+	 * @return bool|User|null
+	 */
+	private static function getUserFromMessage(Message $message) {
+		if ($message->reply) {
+			$from = $message->reply->from;
+		} else {
+			$from = null;
+
+			foreach ($message->entities as $index => $entity) {
+				switch ($entity->type) {
+					case MessageEntity::TYPE_MENTION:
+//						$from = (new User())
+//							->load([
+//								'id' => 1,
+//								'username' => "",
+//							]);
+						$from = false;
+
+						break;
+
+					case MessageEntity::TYPE_TEXT_MENTION:
+
+						$from = (new User())
+							->load((array)$entity->user);
+
+						break;
+				}
+			}
+		}
+
+		return $from;
+	}
+
 	protected function actionRoll(Message $message) {
 		$users = self::getStats($message);
 		$list = self::getActiveList($users);
@@ -141,38 +177,25 @@ class MainController extends BaseController {
 			$response .= "\n{$users[$excludeId]} готовував минулого разу, і виключається із черги";
 		}
 
+		$response .= "\n";
+
 		$this->bot->response->sendMessage($message->chat->id, $response);
-		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOne);
-	}
-
-	private static function getUserFromMessage(Message $message): User {
-		if ($message->reply) {
-			$from = $message->reply->from;
-		} else {
-			$from = null;
-
-			foreach ($message->entities as $index => $entity) {
-				if ($entity->type === MessageEntity::TYPE_TEXT_MENTION) {
-					$from = (new User())
-						->load((array)$entity->user);
-
-					break;
-				}
-			}
-
-			if (empty($from)) {
-				throw new \Exception("Undefined scenario"
-					. Telegram::$app->bot->request->getRawData()
-				);
-			}
-		}
-
-		return $from;
+		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOneId);
 	}
 
 	protected function actionInclude(Message $message) {
 		$users = self::getStats($message);
 		$from = self::getUserFromMessage($message);
+
+		if ($from === false) {
+			return $this->bot->response->sendMessage($message->chat->id, "Нажаль зараз API не дає можливості додати користувача через його прямий <b>@methion</b>.\nПерешліть боту якесь його повідомлення");
+		} elseif (is_null($from)) {
+			return $this->bot->response->sendMessage($message->chat->id, "Невідома помилка!");
+		}
+
+		if ($from->isBot) {
+			return $this->bot->response->sendMessage($message->chat->id, "Боти не вміють готувати каву!");
+		}
 
 		$users[$from->id] = [
 			'status' => true,
@@ -184,28 +207,52 @@ class MainController extends BaseController {
 
 		self::saveStats($message, $users);
 		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> доданий до черги");
-		self::actionStats($message);
+
+		return self::actionStats($message);
 	}
 
 	protected function actionExclude(Message $message) {
 		$users = self::getStats($message);
 		$from = self::getUserFromMessage($message);
 
+		if ($from === false) {
+			return $this->bot->response->sendMessage($message->chat->id, "Нажаль зараз API не дає можливості виключити користувача через його прямий <b>@methion</b>.\nПерешліть боту якесь його повідомлення");
+		} elseif (is_null($from)) {
+			return $this->bot->response->sendMessage($message->chat->id, "Невідома помилка!");
+		}
+
+		if ($from->isBot) {
+			return $this->bot->response->sendMessage($message->chat->id, "Боти не вміють готувати каву!");
+		}
+
 		$users[$from->id]['status'] = false;
 		$users[$from->id]['name'] = $from->getSafeName();
 		self::saveStats($message, $users);
 		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> виключений із черги");
-		self::actionStats($message);
+
+		return self::actionStats($message);
 	}
 
 	protected function actionDelete(Message $message) {
 		$users = self::getStats($message);
-		$message->reply->from->id;
-		$users[$message->reply->from->id]['deleted'] = true;
-		$users[$message->reply->from->id]['name'] = $message->reply->from->getSafeName();
+		$from = self::getUserFromMessage($message);
+
+		if ($from === false) {
+			return $this->bot->response->sendMessage($message->chat->id, "Нажаль зараз API не дає можливості видалити користувача через його прямий <b>@methion</b>.\nПерешліть боту якесь його повідомлення");
+		} elseif (is_null($from)) {
+			return $this->bot->response->sendMessage($message->chat->id, "Невідома помилка!");
+		}
+
+		if ($from->isBot) {
+			return $this->bot->response->sendMessage($message->chat->id, "Боти не вміють готувати каву!");
+		}
+
+		$users[$from->id]['deleted'] = true;
+		$users[$from->id]['name'] = $from->getSafeName();
 		self::saveStats($message, $users);
-		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->getSafeName()}</b> видаленний");
-		self::actionStats($message);
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> видаленний");
+
+		return self::actionStats($message);
 	}
 
 	protected function actionStats(Message $message) {
@@ -216,15 +263,21 @@ class MainController extends BaseController {
 	}
 
 	protected function actionOk(Message $message) {
+		if (!file_exists(self::getTemp($message->chat->id, "last"))) {
+			return $this->bot->response->sendMessage($message->chat->id, 'Перед збереженням треба вибрати "переможця"');
+		}
+
 		$userId = file_get_contents(self::getTemp($message->chat->id, "last"));
 		$users = self::getStats($message);
 		$users[$userId]['count']++;
 		$users[$userId]['last'] = time();
 		self::saveStats($message, $users);
-		self::actionStats($message);
+		unlink(self::getTemp($message->chat->id, "last"));
+
+		return self::actionStats($message);
 	}
 
 	protected function actionNews(Message $message) {
-
+		$this->bot->response->sendMessage($message->chat->id, "В стадії розробки");
 	}
 }
