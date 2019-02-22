@@ -269,6 +269,11 @@ class MainController extends BaseController {
 
 		$userId = file_get_contents(self::getTemp($message->chat->id, "last"));
 		$users = self::getStats($message);
+
+		if (!isset($users[$userId])) {
+			return $this->bot->response->sendMessage($message->chat->id, 'Помилка синхронізації');
+		}
+
 		$users[$userId]['count']++;
 		$users[$userId]['last'] = time();
 		self::saveStats($message, $users);
