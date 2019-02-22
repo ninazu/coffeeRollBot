@@ -5,6 +5,8 @@ namespace telegram\controllers;
 use Telegram;
 use vendor\ninazu\framework\Component\BaseController;
 use vendor\ninazu\framework\Component\Telegram\v2\Message\Message;
+use vendor\ninazu\framework\Component\Telegram\v2\MessageEntity;
+use vendor\ninazu\framework\Component\Telegram\v2\User;
 use vendor\ninazu\framework\Helper\Formatter;
 
 class MainController extends BaseController {
@@ -19,14 +21,18 @@ class MainController extends BaseController {
 		switch (true) {
 			case $message instanceof Message:
 				if ($entities = $message->getEntities()) {
-					if (preg_match("/\/(\w+)@{$this->bot->getBotName()}/", $entities[0], $matches)) {
-						$action = "action" . ucfirst($matches[1]);
-						$this->$action($message);
+					foreach ($entities as $index => $entity) {
+						if (preg_match("/\/(\w+)@{$this->bot->getBotName()}/", $entities[0], $matches)) {
+							unset($message->entities[$index]);
+							$action = "action" . ucfirst($matches[1]);
+							$this->$action($message);
+						}
 					}
 				}
 
 				break;
 		}
+		//$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 	}
 
 	private static function getTemp(int $chatId, string $ext) {
@@ -133,27 +139,54 @@ class MainController extends BaseController {
 		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOne);
 	}
 
+	private static function getUserFromMessage(Message $message): User {
+		if ($message->reply) {
+			$from = $message->reply->from;
+		} else {
+			$from = null;
+
+			foreach ($message->entities as $index => $entity) {
+				if ($entity->type === MessageEntity::TYPE_TEXT_MENTION) {
+					$from = (new User())
+						->load((array)$entity->user);
+
+					break;
+				}
+			}
+
+			if (empty($from)) {
+				throw new \Exception("Undefined scenario");
+			}
+		}
+
+		return $from;
+	}
+
 	protected function actionInclude(Message $message) {
 		$users = self::getStats($message);
-		$users[$message->reply->from->id] = [
+		$from = self::getUserFromMessage($message);
+
+		$users[$from->id] = [
 			'status' => true,
-			'count' => isset($users[$message->reply->from->id]) ? $users[$message->reply->from->id]['count'] : 0,
+			'count' => isset($users[$from->id]) ? $users[$from->id]['count'] : 0,
 			'last' => null,
-			'name' => $message->reply->from->getSafeName(),
+			'name' => $from->getSafeName(),
 			'deleted' => false,
 		];
+
 		self::saveStats($message, $users);
-		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->getSafeName()}</b> доданий до черги");
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> доданий до черги");
 		self::actionStats($message);
 	}
 
 	protected function actionExclude(Message $message) {
 		$users = self::getStats($message);
-		$message->reply->from->id;
-		$users[$message->reply->from->id]['status'] = false;
-		$users[$message->reply->from->id]['name'] = $message->reply->from->getSafeName();
+		$from = self::getUserFromMessage($message);
+
+		$users[$from->id]['status'] = false;
+		$users[$from->id]['name'] = $from->getSafeName();
 		self::saveStats($message, $users);
-		$this->bot->response->sendMessage($message->chat->id, "<b>{$message->reply->from->getSafeName()}</b> виключений із черги");
+		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> виключений із черги");
 		self::actionStats($message);
 	}
 
