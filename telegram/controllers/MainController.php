@@ -130,9 +130,12 @@ class MainController extends BaseController {
 			unset($list[$excludeId]);
 		}
 
-		$choseOneId = array_rand(array_filter(array_keys($list)));
+		unset($list[null], $list[0]);
+		$keys = array_keys($list);
+
+		$choseOneId = $keys[array_rand($keys)];
 		$choseOne = $users[$choseOneId]['name'];
-		$response = "Час кави!\n{$choseOne} ти обраний.";
+		$response = "Час кави!\n<b>{$choseOne}</b> ти обраний.";
 
 		if ($excludeId && isset($users[$excludeId])) {
 			$response .= "\n{$users[$excludeId]} готовував минулого разу, і виключається із черги";
@@ -158,7 +161,9 @@ class MainController extends BaseController {
 			}
 
 			if (empty($from)) {
-				throw new \Exception("Undefined scenario" /*.Telegram::$app->bot->request->getRawData()*/);
+				throw new \Exception("Undefined scenario"
+					. Telegram::$app->bot->request->getRawData()
+				);
 			}
 		}
 
