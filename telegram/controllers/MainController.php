@@ -22,7 +22,7 @@ class MainController extends BaseController {
 			case $message instanceof Message:
 				if ($entities = $message->getEntities()) {
 					foreach ($entities as $index => $entity) {
-						if (preg_match("/\/(\w+)@{$this->bot->getBotName()}/", $entities[0], $matches)) {
+						if (preg_match("/\/(\w+)@{$this->bot->getBotName()}/", $entity, $matches)) {
 							unset($message->entities[$index]);
 							$action = "action" . ucfirst($matches[1]);
 							$this->$action($message);
@@ -32,7 +32,7 @@ class MainController extends BaseController {
 
 				break;
 		}
-		//$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
+		$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 	}
 
 	private static function getTemp(int $chatId, string $ext) {
@@ -71,7 +71,7 @@ class MainController extends BaseController {
 		];
 
 		foreach ($headers as $name) {
-			$maxLen[] = strlen($name);
+			$maxLen[] = mb_strlen($name);
 		}
 
 		$columnsNames = ['name', 'count', 'status'];
@@ -89,7 +89,7 @@ class MainController extends BaseController {
 					$row[$column] = $row[$column] ? "On" : "Off";
 				}
 
-				$strLen = strlen($row[$column]);
+				$strLen = mb_strlen($row[$column]);
 
 				if (!isset($maxLen[$index]) || $strLen > $maxLen[$index]) {
 					$maxLen[$index] = $strLen;
@@ -109,7 +109,7 @@ class MainController extends BaseController {
 
 		foreach ($list as $row => $columns) {
 			foreach ($columns as $column => $value) {
-				$list[$row][$column] = Formatter::strPad($value, $maxLen[$column]);
+				$list[$row][$column] = Formatter::strPad($value, $maxLen[$column] + 1);
 			}
 
 			$list[$row] = implode(' | ', $list[$row]);
@@ -123,15 +123,18 @@ class MainController extends BaseController {
 	protected function actionRoll(Message $message) {
 		$users = self::getStats($message);
 		$list = self::getActiveList($users);
+		$excludeId = null;
 
-		$excludeId = file_get_contents(self::getTemp($message->chat->id, "last"));
-		unset($list[$excludeId]);
+		if (file_exists(self::getTemp($message->chat->id, "last"))) {
+			$excludeId = file_get_contents(self::getTemp($message->chat->id, "last"));
+			unset($list[$excludeId]);
+		}
 
 		$choseOneId = array_rand(array_filter(array_keys($list)));
 		$choseOne = $users[$choseOneId]['name'];
 		$response = "Час кави!\n{$choseOne} ти обраний.";
 
-		if (isset($users[$excludeId])) {
+		if ($excludeId && isset($users[$excludeId])) {
 			$response .= "\n{$users[$excludeId]} готовував минулого разу, і виключається із черги";
 		}
 
@@ -155,7 +158,7 @@ class MainController extends BaseController {
 			}
 
 			if (empty($from)) {
-				throw new \Exception("Undefined scenario");
+				throw new \Exception("Undefined scenario" /*.Telegram::$app->bot->request->getRawData()*/);
 			}
 		}
 
