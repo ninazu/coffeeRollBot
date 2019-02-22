@@ -234,6 +234,9 @@ class MainController extends BaseController {
 
 		$users[$from->id]['status'] = false;
 		$users[$from->id]['name'] = $from->getSafeName();
+		$users[$from->id]['deleted'] = isset($users[$from->id]['deleted']) ? $users[$from->id]['deleted'] : false;
+		$users[$from->id]['count'] = isset($users[$from->id]['count']) ? $users[$from->id]['count'] : 0;
+		$users[$from->id]['last'] = isset($users[$from->id]['last']) ? $users[$from->id]['last'] : null;
 		self::saveStats($message, $users);
 		$this->bot->response->sendMessage($message->chat->id, "<b>{$from->getSafeName()}</b> виключений із черги");
 
