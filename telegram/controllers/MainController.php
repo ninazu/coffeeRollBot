@@ -169,6 +169,10 @@ class MainController extends BaseController {
 		unset($list[null], $list[0]);
 		$keys = array_keys($list);
 
+		if (empty($keys)) {
+			return $this->bot->response->sendMessage($message->chat->id, "Немає кому готувати каву!");
+		}
+
 		$choseOneId = $keys[array_rand($keys)];
 		$choseOne = $users[$choseOneId]['name'];
 		$response = "Час кави!\n<b>{$choseOne}</b> ти обраний.";
@@ -180,7 +184,10 @@ class MainController extends BaseController {
 		$response .= "\n";
 
 		$this->bot->response->sendMessage($message->chat->id, $response);
+
 		file_put_contents(self::getTemp($message->chat->id, "last"), $choseOneId);
+
+		return null;
 	}
 
 	protected function actionInclude(Message $message) {
