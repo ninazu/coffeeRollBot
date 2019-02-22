@@ -5,6 +5,7 @@ namespace telegram\controllers;
 use Telegram;
 use vendor\ninazu\framework\Component\BaseController;
 use vendor\ninazu\framework\Component\Telegram\v2\Message\Message;
+use vendor\ninazu\framework\Helper\Formatter;
 
 class MainController extends BaseController {
 
@@ -26,7 +27,6 @@ class MainController extends BaseController {
 
 				break;
 		}
-		//$this->bot->response->sendMessage($message->chat->id, $this->bot->request->getRawData());
 	}
 
 	private static function getTemp(int $chatId, string $ext) {
@@ -53,8 +53,23 @@ class MainController extends BaseController {
 	}
 
 	private static function getActiveList(array $users) {
+		$headers = [
+			" Ім'я",
+			"Кількість",
+			"Статус ",
+		];
 		$maxLen = [];
-		$list = [];
+		$list = [
+			null => $headers,
+			0 => ["", "", ""],
+		];
+
+		foreach ($headers as $name) {
+			$maxLen[] = strlen($name);
+		}
+
+		$columnsNames = ['name', 'count', 'status'];
+		$columnsNamesCount = count($columnsNames);
 
 		foreach ($users as $userId => $row) {
 			if ($row['deleted']) {
@@ -63,11 +78,21 @@ class MainController extends BaseController {
 
 			$columns = [];
 
-			foreach (['name', 'count', 'status'] as $index => $column) {
+			foreach ($columnsNames as $index => $column) {
+				if (is_bool($row[$column])) {
+					$row[$column] = $row[$column] ? "On" : "Off";
+				}
+
 				$strLen = strlen($row[$column]);
 
-				if ($strLen > $maxLen[$index]) {
+				if (!isset($maxLen[$index]) || $strLen > $maxLen[$index]) {
 					$maxLen[$index] = $strLen;
+				}
+
+				if ($index === 0) {
+					$row[$column] = " {$row[$column]}";
+				} elseif ($index === $columnsNamesCount) {
+					$row[$column] = "{$row[$column]} ";
 				}
 
 				$columns[] = $row[$column];
@@ -78,11 +103,13 @@ class MainController extends BaseController {
 
 		foreach ($list as $row => $columns) {
 			foreach ($columns as $column => $value) {
-				$list[$row][$column] = str_pad($value, $maxLen[$column], " ");
+				$list[$row][$column] = Formatter::strPad($value, $maxLen[$column]);
 			}
 
 			$list[$row] = implode(' | ', $list[$row]);
 		}
+
+		$list[0] = str_repeat("-", strlen($list[0]));
 
 		return $list;
 	}
@@ -94,7 +121,7 @@ class MainController extends BaseController {
 		$excludeId = file_get_contents(self::getTemp($message->chat->id, "last"));
 		unset($list[$excludeId]);
 
-		$choseOneId = array_rand(array_keys($list));
+		$choseOneId = array_rand(array_filter(array_keys($list)));
 		$choseOne = $users[$choseOneId]['name'];
 		$response = "Час кави!\n{$choseOne} ти обраний.";
 
@@ -110,7 +137,7 @@ class MainController extends BaseController {
 		$users = self::getStats($message);
 		$users[$message->reply->from->id] = [
 			'status' => true,
-			'count' => isset($users[$message->reply->from->id]) ? $users[$message->reply->from->id] : 0,
+			'count' => isset($users[$message->reply->from->id]) ? $users[$message->reply->from->id]['count'] : 0,
 			'last' => null,
 			'name' => $message->reply->from->getSafeName(),
 			'deleted' => false,
@@ -142,8 +169,9 @@ class MainController extends BaseController {
 
 	protected function actionStats(Message $message) {
 		$rows = self::getActiveList(self::getStats($message));
+		$table = "<code>" . implode("\n", $rows) . "</code>";
 
-		$this->bot->response->sendMessage($message->chat->id, "<code>" . implode("\n", $rows) . "<code>");
+		$this->bot->response->sendMessage($message->chat->id, $table);
 	}
 
 	protected function actionOk(Message $message) {
